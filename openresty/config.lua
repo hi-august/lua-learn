@@ -15,16 +15,21 @@ _M.spider_mongo_cfg = {
 	timeout = 1000*30,
 }
 
--- local function init_from_ext_config()
-	-- local confutil = require("core.config_util")
-    -- return confutil.init_from_ext_config(_M)
--- end
+_M.ext_config = "filminfo"
 
--- local ok, exp = pcall(init_from_ext_config)
--- if not ok then
-	-- if ngx then
-		-- ngx.log(ngx.ERR, "call init_from_ext_config() failed! err:", exp)
-	-- end
--- end
+_M.debug = true
+_M.debug_req_body = true
+
+local function init_from_ext_config()
+    local confutil = require("core.config_util")
+    return confutil.init_from_ext_config(_M)
+end
+
+local ok, exp = pcall(init_from_ext_config)
+if not ok then
+    if ngx then
+        ngx.log(ngx.ERR, "call init_from_ext_config() failed! err:", exp)
+    end
+end
 
 return _M
