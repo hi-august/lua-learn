@@ -60,6 +60,7 @@ print(#str1)
 print('\n\n\n2333')
 local find = string.find
 print(find('abc, cba', 'ab'))
+print(2222222222222222222)
 print(find('abc, cba', 'ab', 2)) --从索引为2位置开始匹配字符串ab
 print(find('abc, cba', 'ab'), -2) --从索引-2位置匹配
 --格式化字符串format
