@@ -117,7 +117,7 @@ local function filminfo_detail()
         local selector = { fid=filminfo.fid }
         -- 查询filminfo中的preaudit状态.
         local ok, filminfo_target = viewpub.filminfo_dao():find_one(selector)
-        if ok and filminfo_target then 
+        if ok and filminfo_target then
             filminfo.preaudit = filminfo_target.preaudit
         end
         local fields = { fid=true, doubanid=true, name=true, category=true, original_name=true, short_title=true, mfid_db=true, mid_db=true, preaudit=true, pub_status=true, stills=true, poster=true }
@@ -137,11 +137,70 @@ local function filminfo_detail()
     return json.ok(filminfo)
 end
 
+local function filminfo_upsert()
+    ngx.req.read_body()
+    local json_str = ngx.req.get_body_data()
+    local args = viewutil.check_post_json(json_str)
+    local status =  tonumber(args.status) or 0
+    local pingfen =  tonumber(args.pingfen) or nil
+    local doubanid =  tonumber(args.doubanid) or 0
+    if doubanid < 1 then
+        return json.fail(apierror.ERR_ARGS_INVALID)
+    end
+    local selector = { doubanid=doubanid }
+    local update = {}
+    if status > 0 then
+        update.status = status
+    end
+    if pingfen then
+        update.pingfen = pingfen
+    end
+    local updater = { ['$set']=update }
+    -- 不存在插入
+    -- local ok, err = viewpub.filminfo_dao():upsert(selector, updater, 1, true)
+    local ok, err = viewpub.filminfo_dao():upsert(selector, updater, 0, true)
+    if not ok then
+        ngx.log(ngx.ERR, "filminfo_dao upsert(", json.dumps(selector), ",", json.dumps(updater), ") failed! err:", tostring(err))
+        return json.fail(apierror.ERR_SERVER_ERROR)
+    end
+    return json.ok()
+end
+
+local function filminfo_delete()
+    ngx.req.read_body()
+    local json_str = ngx.req.get_body_data()
+    local args = viewutil.check_post_json(json_str)
+    local source_type =  args.source_type or 'douban'
+    local headers = ngx.req.get_headers()
+    local updator = tonumber(headers["x-userid"]) or 0
+    local updator_name = ngx.unescape_uri(headers["x-nickname"]) or "system"
+    local fields = {}
+    local selector = {}
+    fields = { doubanid=true, is_delete="number", source_type=true }
+    local err = util.check_fields(args, fields)
+    local doubanid = tonumber(args.doubanid) or 0
+    if err ~= nil or doubanid < 1 then
+        return json.fail(apierror.ERR_ARGS_INVALID)
+    end
+    local updater = { ["$set"] = { update_time=ngx.time(), is_delete=1 }}
+    local selector = { doubanid=doubanid }
+    local ok, err = viewpub.filminfo_dao():delete(selector)
+    if not ok then
+        ngx.log(ngx.ERR, "filminfo_dao delete(", json.dumps(selector))
+        return json.fail(apierror.ERR_SERVER_ERROR)
+    end
+    return json.ok()
+end
+
 local router = {
     -- curl 127.0.0.1:8100/filminfo/list
     ["/filminfo/list"] = filminfo_list,
     -- curl 127.0.0.1:8100/filminfo/detail?doubanid=1757196
     ["/filminfo/detail"] = filminfo_detail,
+    -- curl '127.0.0.1:8100/filminfo/upsert' -d '{"doubanid": 321480777, "status": 10, "pingfen": 7.7}'
+    ["/filminfo/upsert"] = filminfo_upsert,
+    -- curl '127.0.0.1:8100/filminfo/delete' -d '{"doubanid": 321480777}'
+    ["/filminfo/delete"] = filminfo_delete,
 }
 
 local uri = ngx.var.uri

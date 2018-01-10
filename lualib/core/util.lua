@@ -19,7 +19,26 @@ uint64_t read(int fd, void *buf, uint64_t count);
 uint64_t write(int fd, const void *buf, uint64_t count);
 ]]
 
-function BitValue(bit)
+function _M.check_fields(args, fields)
+    for key, value in pairs(fields) do
+        if args[key] == nil then
+            ngx.log(ngx.ERR, "Miss Field [", key, "].")
+            return "Miss Field"
+        else
+            if args[key] ~= nil then
+                if value == true then
+                    return
+                end
+                if value ~= type(args[key]) then
+                    ngx.log(ngx.ERR, "field [", key, "]'s value type [", type(args[key]), "] invalid! expect: ", value)
+                    return "Value Type Invalid"
+                end
+            end
+        end
+    end
+end
+
+local function BitValue(bit)
     local val = 1
     for i=1, bit do
         val = val * 2
@@ -719,13 +738,12 @@ function _M.get_sql_where_str(obj)
     for k, v in pairs(obj) do
         if type(v) ~= 'table' then
             local sql
-            if type(cv) == 'string' then
+            if type(v) == 'string' then
                 sql = "`"..tostring(k).."`="..ngx.quote_sql_str(v)
             else
                 sql = "`"..tostring(k).."`="..tostring(v)
             end
-            
-            table.insert(sql_table, sql)          
+            table.insert(sql_table, sql)
         end
     end
 
