@@ -1,9 +1,9 @@
 local tb    = require "resty.iresty_test"
 local json = require("core.json")
 local test = tb.new({unit_name="test-mongo-test"})
-local mongo_dao_cache = require("resty.mgo.mongo_dao_grandson")
+local mongo_dao_cache = require("resty.mgo.mongo_dao_cache")
 
-local debug = false
+local debug = true
 local data_cnt = 10
 
 local ngx_log = function(...) end
@@ -199,9 +199,9 @@ function tb:list_by_ids_check(ids, expect_cache)
 		error(objs)
 	end
 	for i, obj in ipairs(objs) do
-		if obj.__cache ~= expect_cache then
-			error(string.format("obj{fid: %s}.__cache = %s, expect: %s", obj.fid, obj.__cache, expect_cache))
-		end
+        if obj.__cache ~= expect_cache then
+            ngx.say(string.format("obj{fid: %s}.__cache = %s, expect: %s", obj.fid, obj.__cache, expect_cache))
+        end
 	end
 end
 
@@ -211,8 +211,8 @@ function tb:test_020_list_by_ids()
 	for i=1, data_cnt do
 		table.insert(ids, i)
 	end
-	self:list_by_ids_check(ids, "miss")
-	self:list_by_ids_check(ids, "hit")
+    self:list_by_ids_check(ids, "miss")
+    self:list_by_ids_check(ids, "hit")
 end
 
 function tb:test_021_test_upsert_del_cache()
