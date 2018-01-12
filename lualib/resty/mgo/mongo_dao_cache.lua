@@ -92,7 +92,6 @@ end
 
 -- @overide
 function _M:find(selector, fields, sortby, skip, limit)
-	
 	local ok, objs = retry.retry(self:super_cache().find, self, selector,fields or self.list_fields, sortby, skip, limit)
     if not ok then
         return ok, objs
@@ -112,6 +111,9 @@ function _M:get_by_id(id, fields, emptycache)
 		local cachekey = self.cache_prefix .. ':id:' .. tostring(id)
 		-- 这里调用find_one 不要把过滤的fields传进去,传进去,会导致缓存的数据,也是过滤后的,这可能不是我们想要的.
 		local ok, obj, cache_status
+        ngx.say(cachekey)
+        -- local ca = self.cachectx:get_from_cache(cachekey)
+        -- ngx.say(ca)
 		if emptycache then
 			ok, obj, cache_status = self.cachectx:cache_empty_query(cachekey, self.cache_exptime, emptycache, self.find_one, self, selector)
 		else

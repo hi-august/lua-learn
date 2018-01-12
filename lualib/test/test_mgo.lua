@@ -24,6 +24,11 @@ if ok then
 		ngx.log(ngx.ERR, i," : ", obj.fid, ', name: ', obj.name)
 	end
 end
+
+local selector = { doubanid=1757196 }
+local ok, film = dao:find_one(selector, nil)
+ngx.log(ngx.ERR, film.fid, film.name)
+
 ngx.update_time()
 local _end = ngx.time()
 local cost = _end - begin

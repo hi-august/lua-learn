@@ -100,6 +100,18 @@ local function filminfo_list()
     return json.ok({ films = films, list_ended = ended, total = count })
 end
 
+local function filminfo_by_fid()
+    local args = ngx.req.get_uri_args()
+    local fid = tonumber(args.fid) or 0
+    local ok, filminfo, films = nil, {}, {}
+    ok, filminfo = viewpub.filminfo_dao():get_by_id(fid, nil)
+    if not ok or not filminfo then
+        ngx.log(ngx.ERR, "get filminfo_dao douban by fid(", tostring(fid), ") failed! not found")
+        return json.fail(apierror.ERR_OBJECT_NOT_FOUND)
+    end
+    return json.ok(filminfo)
+end
+
 local function filminfo_detail()
     local args = ngx.req.get_uri_args()
     local doubanid = tonumber(args.doubanid) or 0
@@ -197,6 +209,8 @@ local router = {
     ["/filminfo/list"] = filminfo_list,
     -- curl 127.0.0.1:8100/filminfo/detail?doubanid=1757196
     ["/filminfo/detail"] = filminfo_detail,
+    -- curl 127.0.0.1:8100/filminfo/by_fid?fid=136477
+    ["/filminfo/by_fid"] = filminfo_by_fid,
     -- curl '127.0.0.1:8100/filminfo/upsert' -d '{"doubanid": 321480777, "status": 10, "pingfen": 7.7}'
     ["/filminfo/upsert"] = filminfo_upsert,
     -- curl '127.0.0.1:8100/filminfo/delete' -d '{"doubanid": 321480777}'
