@@ -204,6 +204,28 @@ local function filminfo_delete()
     return json.ok()
 end
 
+local function filminfo_stream_response()
+    ngx.say(111)
+    local file, err = io.open(ngx.config.prefix() .. "data.db","r")
+    if not file then
+        ngx.log(ngx.ERR, "open file error:", err)
+        -- ngx.exit(ngx.HTTP_SERVICE_UNAVAILABLE)
+        return json.fail(apierror.ERR_SERVER_ERROR)
+    end
+
+    local data
+    while true do
+        data = file:read(1024)
+        if nil == data then
+            break
+        end
+        ngx.print(data)
+        ngx.flush(true)
+    end
+    file:close()
+    return json.ok()
+end
+
 local router = {
     -- curl 127.0.0.1:8100/filminfo/list
     ["/filminfo/list"] = filminfo_list,
@@ -215,6 +237,7 @@ local router = {
     ["/filminfo/upsert"] = filminfo_upsert,
     -- curl '127.0.0.1:8100/filminfo/delete' -d '{"doubanid": 321480777}'
     ["/filminfo/delete"] = filminfo_delete,
+    ["/filminfo/stream_response"] = filminfo_stream_response,
 }
 
 local uri = ngx.var.uri
