@@ -3,6 +3,7 @@ local util = require("core.util")
 local apierror = require("view.apierror")
 local viewutil = require("core.viewutil")
 local viewpub = require("view.viewpub")
+local config = require("config")
 
 local list_fields = viewpub.filminfo_dao().list_fields
 
@@ -204,12 +205,22 @@ local function filminfo_delete()
     return json.ok()
 end
 
+-- 1. 输出内容本身体积很大,例如超过 2G 的文件下载,
+-- 使用流响应
+-- 2. 输出内容本身是由各种碎片拼凑的,碎片数量庞大,例如应答数据是某地区所有人的姓名
+-- 当有非常多碎片数据,可以把这些碎片数据统一起来放到数组,效率更高,并且更容易被优化
+
 local function filminfo_stream_response()
-    ngx.say(111)
-    local file, err = io.open(ngx.config.prefix() .. "data.db","r")
+    local args = ngx.req.get_uri_args()
+    local fn = args.file or 'test.mp4'
+    local file_name  = config.prefix .. fn
+    -- 限速
+    ngx.var.limit_rate = 1024*1024
+    ngx.header['Content-Type'] = 'application/octet-stream'
+    ngx.header["Content-Disposition"] = "attachment;filename=" .. ngx.escape_uri(fn)
+    local file, err = io.open(file_name, "r")
     if not file then
         ngx.log(ngx.ERR, "open file error:", err)
-        -- ngx.exit(ngx.HTTP_SERVICE_UNAVAILABLE)
         return json.fail(apierror.ERR_SERVER_ERROR)
     end
 
@@ -237,6 +248,7 @@ local router = {
     ["/filminfo/upsert"] = filminfo_upsert,
     -- curl '127.0.0.1:8100/filminfo/delete' -d '{"doubanid": 321480777}'
     ["/filminfo/delete"] = filminfo_delete,
+    -- curl -I 127.0.0.1:8100/filminfo/stream_response?file=README.md
     ["/filminfo/stream_response"] = filminfo_stream_response,
 }
 

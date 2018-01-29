@@ -16,6 +16,7 @@ _M.spider_mongo_cfg = {
 }
 
 _M.ext_config = "filminfo"
+_M.prefix = '/opt/lua-learn/'
 
 _M.debug = true
 _M.debug_req_body = true
